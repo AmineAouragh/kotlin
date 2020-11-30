@@ -34,6 +34,7 @@ interface IncrementalCacheCommon {
     val thisWithDependentCaches: Iterable<AbstractIncrementalCache<*>>
     fun classesFqNamesBySources(files: Iterable<File>): Collection<FqName>
     fun getSubtypesOf(className: FqName): Sequence<FqName>
+    fun getSupertypesOf(className: FqName): Sequence<FqName>
     fun getSourceFileIfClass(fqName: FqName): File?
     fun markDirty(removedAndCompiledSources: Collection<File>)
     fun clearCacheForRemovedClasses(changesCollector: ChangesCollector)
@@ -90,6 +91,9 @@ abstract class AbstractIncrementalCache<ClassName>(
     override fun getSubtypesOf(className: FqName): Sequence<FqName> =
         subtypesMap[className].asSequence()
 
+    override fun getSupertypesOf(className: FqName): Sequence<FqName> =
+        supertypesMap[className].asSequence()
+
     override fun getSourceFileIfClass(fqName: FqName): File? =
         classFqNameToSourceMap[fqName]
 
@@ -106,6 +110,7 @@ abstract class AbstractIncrementalCache<ClassName>(
 
     protected fun addToClassStorage(proto: ProtoBuf.Class, nameResolver: NameResolver, srcFile: File) {
         val supertypes = proto.supertypes(TypeTable(proto.typeTable))
+        proto.sealedSubclassFqNameCount
         val parents = supertypes.map { nameResolver.getClassId(it.className).asSingleFqName() }
             .filter { it.asString() != "kotlin.Any" }
             .toSet()
