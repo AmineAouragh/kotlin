@@ -18,6 +18,7 @@ import org.jetbrains.kotlin.fir.psi
 import org.jetbrains.kotlin.fir.resolve.ScopeSession
 import org.jetbrains.kotlin.fir.signaturer.FirMangler
 import org.jetbrains.kotlin.fir.symbols.FirBuiltinSymbols
+import org.jetbrains.kotlin.ir.ObsoleteDescriptorBasedAPI
 import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.declarations.impl.IrFileImpl
 import org.jetbrains.kotlin.ir.declarations.impl.IrModuleFragmentImpl
@@ -318,12 +319,12 @@ class Fir2IrConverter(
 
             externalDependenciesGenerator.generateUnboundSymbolsAsDependencies()
             val stubGenerator = irProviders.filterIsInstance<DeclarationStubGenerator>().first()
-            for (descriptor in symbolTable.wrappedTopLevelCallableDescriptors()) {
-                val parentClass = stubGenerator.generateOrGetFacadeClass(descriptor as WrappedDeclarationDescriptor<*>)
-                val owner = descriptor.owner
-                owner.parent = parentClass ?: continue
-                if (owner is IrProperty) {
-                    owner.backingField?.parent = parentClass
+            for (externalCallable in symbolTable.topLevelExternalCallables()) {
+                @OptIn(ObsoleteDescriptorBasedAPI::class)
+                val parentClass = stubGenerator.generateOrGetFacadeClass(externalCallable.descriptor)
+                externalCallable.parent = parentClass ?: continue
+                if (externalCallable is IrProperty) {
+                    externalCallable.backingField?.parent = parentClass
                 }
             }
 

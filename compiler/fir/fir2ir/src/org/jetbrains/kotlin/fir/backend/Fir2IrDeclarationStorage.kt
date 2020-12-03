@@ -42,6 +42,7 @@ import org.jetbrains.kotlin.ir.expressions.IrExpression
 import org.jetbrains.kotlin.ir.expressions.IrSyntheticBodyKind
 import org.jetbrains.kotlin.ir.expressions.impl.IrErrorExpressionImpl
 import org.jetbrains.kotlin.ir.symbols.*
+import org.jetbrains.kotlin.ir.symbols.impl.IrValueParameterSymbolImpl
 import org.jetbrains.kotlin.ir.types.IrErrorType
 import org.jetbrains.kotlin.ir.types.IrSimpleType
 import org.jetbrains.kotlin.ir.types.IrType
@@ -261,19 +262,13 @@ class Fir2IrDeclarationStorage(
         type: IrType,
         parent: IrFunction
     ): IrValueParameter {
-        val descriptor = WrappedValueParameterDescriptor()
-        return symbolTable.declareValueParameter(
-            startOffset, endOffset, origin, descriptor, type
-        ) { symbol ->
-            irFactory.createValueParameter(
-                startOffset, endOffset, IrDeclarationOrigin.DEFINED, symbol,
-                Name.special("<set-?>"), 0, type,
-                varargElementType = null,
-                isCrossinline = false, isNoinline = false, isAssignable = false
-            ).apply {
-                this.parent = parent
-                descriptor.bind(this)
-            }
+        return irFactory.createValueParameter(
+            startOffset, endOffset, IrDeclarationOrigin.DEFINED, IrValueParameterSymbolImpl(),
+            Name.special("<set-?>"), 0, type,
+            varargElementType = null,
+            isCrossinline = false, isNoinline = false, isAssignable = false
+        ).apply {
+            this.parent = parent
         }
     }
 
@@ -883,32 +878,26 @@ class Fir2IrDeclarationStorage(
         useStubForDefaultValueStub: Boolean = true,
         typeContext: ConversionTypeContext = ConversionTypeContext.DEFAULT
     ): IrValueParameter {
-        val descriptor = WrappedValueParameterDescriptor()
         val origin = IrDeclarationOrigin.DEFINED
         val type = valueParameter.returnTypeRef.toIrType()
         val irParameter = valueParameter.convertWithOffsets { startOffset, endOffset ->
-            symbolTable.declareValueParameter(
-                startOffset, endOffset, origin, descriptor, type
-            ) { symbol ->
-                irFactory.createValueParameter(
-                    startOffset, endOffset, origin, symbol,
-                    valueParameter.name, index, type,
-                    if (!valueParameter.isVararg) null
-                    else valueParameter.returnTypeRef.coneType.arrayElementType()?.toIrType(typeContext),
-                    valueParameter.isCrossinline, valueParameter.isNoinline
-                ).apply {
-                    descriptor.bind(this)
-                    if (valueParameter.defaultValue.let {
-                            it != null && (useStubForDefaultValueStub || it !is FirExpressionStub)
-                        }
-                    ) {
-                        this.defaultValue = factory.createExpressionBody(
-                            IrErrorExpressionImpl(
-                                UNDEFINED_OFFSET, UNDEFINED_OFFSET, type,
-                                "Stub expression for default value of ${valueParameter.name}"
-                            )
-                        )
+            irFactory.createValueParameter(
+                startOffset, endOffset, origin, IrValueParameterSymbolImpl(),
+                valueParameter.name, index, type,
+                if (!valueParameter.isVararg) null
+                else valueParameter.returnTypeRef.coneType.arrayElementType()?.toIrType(typeContext),
+                valueParameter.isCrossinline, valueParameter.isNoinline
+            ).apply {
+                if (valueParameter.defaultValue.let {
+                        it != null && (useStubForDefaultValueStub || it !is FirExpressionStub)
                     }
+                ) {
+                    this.defaultValue = factory.createExpressionBody(
+                        IrErrorExpressionImpl(
+                            UNDEFINED_OFFSET, UNDEFINED_OFFSET, type,
+                            "Stub expression for default value of ${valueParameter.name}"
+                        )
+                    )
                 }
             }
         }

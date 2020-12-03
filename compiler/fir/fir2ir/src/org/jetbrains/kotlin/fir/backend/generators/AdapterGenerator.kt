@@ -30,6 +30,7 @@ import org.jetbrains.kotlin.ir.expressions.impl.*
 import org.jetbrains.kotlin.ir.symbols.IrConstructorSymbol
 import org.jetbrains.kotlin.ir.symbols.IrFunctionSymbol
 import org.jetbrains.kotlin.ir.symbols.IrSimpleFunctionSymbol
+import org.jetbrains.kotlin.ir.symbols.impl.IrValueParameterSymbolImpl
 import org.jetbrains.kotlin.ir.types.IrSimpleType
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.isUnit
@@ -249,30 +250,22 @@ internal class AdapterGenerator(
         index: Int,
         type: IrType,
         origin: IrDeclarationOrigin
-    ): IrValueParameter {
-        val startOffset = adapterFunction.startOffset
-        val endOffset = adapterFunction.endOffset
-        val descriptor = WrappedValueParameterDescriptor()
-        return symbolTable.declareValueParameter(
-            startOffset, endOffset, origin, descriptor, type
-        ) { irAdapterParameterSymbol ->
-            irFactory.createValueParameter(
-                startOffset, endOffset,
-                origin,
-                irAdapterParameterSymbol,
-                name,
-                index,
-                type,
-                varargElementType = null,
-                isCrossinline = false,
-                isNoinline = false,
-                isAssignable = false
-            ).also { irAdapterValueParameter ->
-                descriptor.bind(irAdapterValueParameter)
-                irAdapterValueParameter.parent = adapterFunction
-            }
+    ): IrValueParameter =
+        irFactory.createValueParameter(
+            adapterFunction.startOffset,
+            adapterFunction.endOffset,
+            origin,
+            IrValueParameterSymbolImpl(),
+            name,
+            index,
+            type,
+            varargElementType = null,
+            isCrossinline = false,
+            isNoinline = false,
+            isAssignable = false
+        ).also { irAdapterValueParameter ->
+            irAdapterValueParameter.parent = adapterFunction
         }
-    }
 
     private fun IrValueDeclaration.toIrGetValue(startOffset: Int, endOffset: Int): IrGetValue =
         IrGetValueImpl(startOffset, endOffset, this.type, this.symbol)

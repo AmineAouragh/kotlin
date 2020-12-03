@@ -26,12 +26,12 @@ import org.jetbrains.kotlin.ir.declarations.*
 import org.jetbrains.kotlin.ir.descriptors.WrappedClassDescriptor
 import org.jetbrains.kotlin.ir.descriptors.WrappedEnumEntryDescriptor
 import org.jetbrains.kotlin.ir.descriptors.WrappedTypeAliasDescriptor
-import org.jetbrains.kotlin.ir.descriptors.WrappedTypeParameterDescriptor
 import org.jetbrains.kotlin.ir.expressions.impl.IrEnumConstructorCallImpl
 import org.jetbrains.kotlin.ir.symbols.IrClassSymbol
 import org.jetbrains.kotlin.ir.symbols.IrEnumEntrySymbol
 import org.jetbrains.kotlin.ir.symbols.IrTypeAliasSymbol
 import org.jetbrains.kotlin.ir.symbols.IrTypeParameterSymbol
+import org.jetbrains.kotlin.ir.symbols.impl.IrTypeParameterSymbolImpl
 import org.jetbrains.kotlin.ir.types.IrType
 import org.jetbrains.kotlin.ir.types.impl.IrSimpleTypeImpl
 import org.jetbrains.kotlin.ir.util.IdSignature
@@ -311,20 +311,15 @@ class Fir2IrClassifierStorage(
         typeContext: ConversionTypeContext = ConversionTypeContext.DEFAULT
     ): IrTypeParameter {
         require(index >= 0)
-        val descriptor = WrappedTypeParameterDescriptor()
         val origin = IrDeclarationOrigin.DEFINED
         val irTypeParameter = with(typeParameter) {
             convertWithOffsets { startOffset, endOffset ->
-                symbolTable.declareGlobalTypeParameter(startOffset, endOffset, origin, descriptor) { symbol ->
-                    irFactory.createTypeParameter(
-                        startOffset, endOffset, origin, symbol,
-                        name, if (index < 0) 0 else index,
-                        isReified,
-                        variance
-                    ).apply {
-                        descriptor.bind(this)
-                    }
-                }
+                irFactory.createTypeParameter(
+                    startOffset, endOffset, origin, IrTypeParameterSymbolImpl(),
+                    name, if (index < 0) 0 else index,
+                    isReified,
+                    variance
+                )
             }
         }
 
