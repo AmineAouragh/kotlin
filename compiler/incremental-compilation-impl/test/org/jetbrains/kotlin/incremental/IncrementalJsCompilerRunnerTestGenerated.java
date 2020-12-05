@@ -580,6 +580,11 @@ public class IncrementalJsCompilerRunnerTestGenerated extends AbstractIncrementa
             runTest("jps-plugin/testData/incremental/pureKotlin/sealedClassesRemoveInheritor/");
         }
 
+        @TestMetadata("sealedClassesUseSwitch")
+        public void testSealedClassesUseSwitch() throws Exception {
+            runTest("jps-plugin/testData/incremental/pureKotlin/sealedClassesUseSwitch/");
+        }
+
         @TestMetadata("secondaryConstructorInlined")
         public void testSecondaryConstructorInlined() throws Exception {
             runTest("jps-plugin/testData/incremental/pureKotlin/secondaryConstructorInlined/");
