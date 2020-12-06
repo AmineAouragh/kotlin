@@ -146,13 +146,15 @@ fun ChangesCollector.getDirtyData(
     val dirtyLookupSymbols = HashSet<LookupSymbol>()
     val dirtyClassesFqNames = HashSet<FqName>()
 
+    val parentsCouldBeAffected = HashSet<FqName>()
+
     for (change in changes()) {
         reporter.reportVerbose { "Process $change" }
 
         if (change is ChangeInfo.SignatureChanged) {
             val fqNames = if (!change.areSubclassesAffected) listOf(change.fqName) else withSubtypes(change.fqName, caches)
             dirtyClassesFqNames.addAll(fqNames)
-            dirtyClassesFqNames.addAll(withSupertypes(change.fqName, caches))
+            dirtyClassesFqNames.addAll(sealedSupertypes(change.fqName, caches))
 
             for (classFqName in fqNames) {
                 assert(!classFqName.isRoot) { "$classFqName is root when processing $change" }
@@ -171,9 +173,14 @@ fun ChangesCollector.getDirtyData(
             }
 
             fqNames.mapTo(dirtyLookupSymbols) { LookupSymbol(SAM_LOOKUP_NAME.asString(), it.asString()) }
+        } else if (change is ChangeInfo.ParentsChanged) {
+            parentsCouldBeAffected.addAll(change.parentsChanged)
         }
     }
 
+    //TODO process changed parents
+    //TODO
+    //withSubtypes()
     return DirtyData(dirtyLookupSymbols, dirtyClassesFqNames)
 }
 
@@ -218,28 +225,12 @@ fun mapClassesFqNamesToFiles(
     return fqNameToAffectedFiles.values.flattenTo(HashSet())
 }
 
-fun withSupertypes(
+fun sealedSupertypes(
     typeFqName: FqName,
     caches: Iterable<IncrementalCacheCommon>
-): Set<FqName> {
-    val types = LinkedHashSet(listOf(typeFqName))
-    val supertypes = hashSetOf<FqName>()
-
-    while (types.isNotEmpty()) {
-        val iterator = types.iterator()
-        val unprocessedType = iterator.next()
-        iterator.remove()
-
-        caches.asSequence()
-            .flatMap { it.getSupertypesOf(unprocessedType) }
-            .filter { it !in supertypes }
-            .forEach { types.add(it) }
-
-        supertypes.add(unprocessedType)
-    }
-
-    return supertypes
-}
+): Collection<FqName> = caches.flatMap { it.getSupertypesOf(typeFqName) }
+    .distinct()
+    .filter { supertype -> caches.any { it.isSealed(supertype) ?: false } }
 
 fun withSubtypes(
     typeFqName: FqName,
