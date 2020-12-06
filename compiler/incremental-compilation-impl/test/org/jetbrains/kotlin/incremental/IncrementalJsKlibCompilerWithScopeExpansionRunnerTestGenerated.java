@@ -570,9 +570,19 @@ public class IncrementalJsKlibCompilerWithScopeExpansionRunnerTestGenerated exte
             runTest("jps-plugin/testData/incremental/pureKotlin/returnTypeChanged/");
         }
 
+        @TestMetadata("sealedClassesAddImplements")
+        public void testSealedClassesAddImplements() throws Exception {
+            runTest("jps-plugin/testData/incremental/pureKotlin/sealedClassesAddImplements/");
+        }
+
         @TestMetadata("sealedClassesAddInheritor")
         public void testSealedClassesAddInheritor() throws Exception {
             runTest("jps-plugin/testData/incremental/pureKotlin/sealedClassesAddInheritor/");
+        }
+
+        @TestMetadata("sealedClassesRemoveImplements")
+        public void testSealedClassesRemoveImplements() throws Exception {
+            runTest("jps-plugin/testData/incremental/pureKotlin/sealedClassesRemoveImplements/");
         }
 
         @TestMetadata("sealedClassesRemoveInheritor")
